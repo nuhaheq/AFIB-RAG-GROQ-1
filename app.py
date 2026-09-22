@@ -179,9 +179,12 @@ ANSWER:
 
                 # Senarai model Groq — cuba satu-satu, guna yang pertama berjaya
                 candidate_models = [
-                    "llama-3.3-70b-versatile",
-                    "llama-3.1-8b-instant",
-                    "openai/gpt-oss-120b",
+                    MODEL_CANDIDATES = [
+                    ("groq", "llama-3.3-70b-versatile"),
+                    ("groq", "llama-3.1-8b-instant"),
+                    ("groq", "qwen/qwen3-32b"),
+                    ("groq", "openai/gpt-oss-120b"),
+                    ("groq", "moonshotai/kimi-k2-instruct-0905"),
                 ]
 
                 answer_text = None
