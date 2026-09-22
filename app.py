@@ -33,7 +33,7 @@ if "qa_log" not in st.session_state:
 
 @st.cache_resource
 def setup_and_load_faiss():
-    """Ekstrak semua fail ZIP FAISS dan load setiap vectorstore."""
+    """Extract all FAISS ZIP files and load each vectorstore."""
     zip_files = [f for f in os.listdir('.') if f.endswith('.zip')]
     extract_dirs = []
     for z_file in zip_files:
@@ -120,7 +120,7 @@ if st.button("Generate Answer", type="primary"):
                     for doc in top_docs
                 ])
 
-                with st.expander("🔍 Debug: konteks yang diambil (semak nama key metadata di sini)"):
+                with st.expander("🔍 Debug: retrieved context (check metadata key names here)"):
                     if not top_docs:
                         st.write("Tiada konteks ditemui untuk query ini.")
                     for i, doc in enumerate(top_docs, start=1):
@@ -224,7 +224,7 @@ ANSWER:
                 if not answer_text:
                     raise Exception(f"Gagal memanggil semua model. Ralat terakhir: {last_error}")
 
-                st.caption(f"🤖 Jawapan dijana menggunakan model: `{used_model}`")
+                st.caption(f"🤖 Model used to generate answer: `{used_model}`")
                 st.subheader("OFFICIAL CLINICAL ANSWER")
                 st.markdown(answer_text)
 
@@ -246,25 +246,25 @@ ANSWER:
 # ==================================================
 if st.session_state.qa_log:
     st.divider()
-    st.subheader(f"📊 Log Soalan & Jawapan Sesi Ini ({len(st.session_state.qa_log)} rekod)")
+    st.subheader(f"📊 Session Q&A Log ({len(st.session_state.qa_log)} record)")
     df_log = pd.DataFrame(st.session_state.qa_log)
     st.dataframe(df_log, use_container_width=True)
 
     # Ringkasan: berapa soalan dijawab oleh model mana (untuk laporan metodologi FYP)
     if "model_used" in df_log.columns:
-        st.caption("**Ringkasan model digunakan (untuk laporan metodologi):**")
+        st.caption("**Summary of the model used (for the methodology report):**")
         model_counts = df_log["model_used"].value_counts()
         for model_name, count in model_counts.items():
             st.write(f"- `{model_name}`: {count} soalan")
 
     csv_bytes = df_log.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="⬇️ Download Log sebagai CSV (eval_vignettes.csv)",
+        label="⬇️ Download Log as CSV (eval_vignettes.csv)",
         data=csv_bytes,
         file_name="eval_vignettes.csv",
         mime="text/csv",
     )
     st.caption(
-        "Lajur `ground_truth` kosong — isi jawapan rujukan anda dalam Excel "
-        "selepas download, sebelum upload ke Colab untuk RAGAS scoring."
+        "`ground_truth` column is empty — fill in your reference answers in Excel"
+        "after downloading, before uploading to Colab for RAGAS scoring"
     )
