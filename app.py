@@ -178,7 +178,6 @@ ANSWER:
                 client = Groq(api_key=api_key)
 
                 # Senarai model Groq — cuba satu-satu, guna yang pertama berjaya
-                candidate_models = [
                     MODEL_CANDIDATES = [
                     ("groq", "llama-3.3-70b-versatile"),
                     ("groq", "llama-3.1-8b-instant"),
