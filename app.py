@@ -177,34 +177,52 @@ ANSWER:
                 api_key = st.secrets["GROQ_API_KEY"]
                 client = Groq(api_key=api_key)
 
-                # Senarai model Groq — cuba satu-satu, guna yang pertama berjaya
-                    MODEL_CANDIDATES = [
+                # Senarai model — tersusun ikut KEUTAMAAN (cuba pertama dulu).
+                # Format: (provider, model_id)
+                # "groq"   -> guna GROQ_API_KEY (semua model dalam satu akaun Groq)
+                # "gemini" -> guna GEMINI_API_KEY berasingan (perlu tambah secret baharu)
+                MODEL_CANDIDATES = [
                     ("groq", "llama-3.3-70b-versatile"),
                     ("groq", "llama-3.1-8b-instant"),
                     ("groq", "qwen/qwen3-32b"),
                     ("groq", "openai/gpt-oss-120b"),
                     ("groq", "moonshotai/kimi-k2-instruct-0905"),
+                    # ("gemini", "gemini-2.5-flash"),  # buka baris ni kalau nak Gemini sebagai fallback
                 ]
+
+                def call_groq(model_id, prompt):
+                    completion = client.chat.completions.create(
+                        model=model_id,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    return completion.choices[0].message.content
+
+                def call_gemini(model_id, prompt):
+                    from google import genai  # perlu google-genai dalam requirements.txt
+                    gemini_client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+                    response = gemini_client.models.generate_content(model=model_id, contents=prompt)
+                    return response.text
 
                 answer_text = None
                 last_error = None
                 used_model = None
 
-                for model_id in candidate_models:
+                for provider, model_id in MODEL_CANDIDATES:
                     try:
-                        completion = client.chat.completions.create(
-                            model=model_id,
-                            messages=[{"role": "user", "content": system_prompt}],
-                        )
-                        answer_text = completion.choices[0].message.content
-                        used_model = model_id
+                        if provider == "groq":
+                            answer_text = call_groq(model_id, system_prompt)
+                        elif provider == "gemini":
+                            answer_text = call_gemini(model_id, system_prompt)
+                        else:
+                            continue
+                        used_model = f"{provider}/{model_id}"
                         break
                     except Exception as err:
                         last_error = err
                         continue
 
                 if not answer_text:
-                    raise Exception(f"Gagal memanggil semua model Groq. Ralat terakhir: {last_error}")
+                    raise Exception(f"Gagal memanggil semua model. Ralat terakhir: {last_error}")
 
                 st.caption(f"🤖 Jawapan dijana menggunakan model: `{used_model}`")
                 st.subheader("OFFICIAL CLINICAL ANSWER")
@@ -231,6 +249,13 @@ if st.session_state.qa_log:
     st.subheader(f"📊 Log Soalan & Jawapan Sesi Ini ({len(st.session_state.qa_log)} rekod)")
     df_log = pd.DataFrame(st.session_state.qa_log)
     st.dataframe(df_log, use_container_width=True)
+
+    # Ringkasan: berapa soalan dijawab oleh model mana (untuk laporan metodologi FYP)
+    if "model_used" in df_log.columns:
+        st.caption("**Ringkasan model digunakan (untuk laporan metodologi):**")
+        model_counts = df_log["model_used"].value_counts()
+        for model_name, count in model_counts.items():
+            st.write(f"- `{model_name}`: {count} soalan")
 
     csv_bytes = df_log.to_csv(index=False).encode("utf-8")
     st.download_button(
